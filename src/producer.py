@@ -4,15 +4,35 @@ import uuid
 import random
 import logging
 from kafka import KafkaProducer
+from datetime import datetime
 from faker import Faker
+import os
+
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(os.path.join(LOG_DIR, "producer.log")),
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
 LOCALES = ["en_US", "de_DE", "fr_FR", "en_GB", "it_IT", "es_ES", "sv_SE"]
 fake = Faker(LOCALES)
+
+LOCALE_COUNTRY = {
+    "en_US": "United States",
+    "de_DE": "Germany",
+    "fr_FR": "France",
+    "en_GB": "United Kingdom",
+    "it_IT": "Italy",
+    "es_ES": "Spain",
+    "sv_SE": "Sweden",
+}
 
 
 def get_producer():
@@ -31,12 +51,12 @@ def generate_customer_event():
         "first_name": loc.first_name(),
         "last_name": loc.last_name(),
         "age": random.randint(18, 90),
-        "email": fake.unique.email(),
-        "country": locale.split("_")[1],
+        "email": loc.email(),
+        "country": LOCALE_COUNTRY[locale],
         "city": loc.city(),
         "postal_code": loc.postcode(),
         "phone_number": loc.phone_number(),
-        "registration_date": fake.date_time_this_year().strftime("%Y-%m-%d %H:%M:%S"),
+        "registration_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 

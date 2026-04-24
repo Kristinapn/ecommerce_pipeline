@@ -91,9 +91,12 @@ def generate_customers():
         )
 
         # Customer should not register before 18th birthday
-        eighteenth = datetime.combine(dob_date, datetime.min.time()) + timedelta(
-            days=18 * 365 + 5
-        )
+        try:
+            eighteenth_date = dob_date.replace(year=dob_date.year + 18)
+        except ValueError:  # 29 February
+            eighteenth_date = dob_date.replace(year=dob_date.year + 18, day=28)
+        eighteenth = datetime.combine(eighteenth_date, datetime.min.time())
+
         earliest_reg = max(eighteenth, five_years_ago)
         reg_date_dt = fake.date_time_between(start_date=earliest_reg, end_date=now)
         reg_date = reg_date_dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -193,6 +196,8 @@ def generate_orders(customers):
         order_date_dt = fake.date_time_between(start_date=reg_date_dt, end_date=now)
         order_date = order_date_dt.strftime("%Y-%m-%d %H:%M:%S")
 
+        updated_dt = fake.date_time_between(start_date=order_date_dt, end_date=now)
+
         orders.append(
             (
                 str(uuid.uuid4()),
@@ -204,7 +209,7 @@ def generate_orders(customers):
                 random.choice(PAYMENT_METHODS),
                 random.choice(CURRENCIES),
                 order_date,  # created_at same as order_date
-                order_date,  # kept this one simple
+                updated_dt.strftime("%Y-%m-%d %H:%M:%S"),
             )
         )
     return orders
