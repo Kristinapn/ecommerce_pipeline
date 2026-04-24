@@ -22,7 +22,7 @@ cd docker && docker compose up -d && cd ..
 python src/db.py
 python src/generator.py
 
-# 5. Stream (two terminals, venv active in both)
+# 5. Stream (in two separate terminals - venv active in both)
 python src/consumer.py          # terminal 1
 python src/producer.py          # terminal 2
 ```
@@ -43,16 +43,13 @@ src/consumer.py             reads the topic, validates, inserts
 docker/docker-compose.yml   single-node Kafka (KRaft)
 ```
 
-## Notes on choices
+## Notes
 
-- **GDPR.** `customers.deleted_at` for soft delete (right to erasure) preserves referential integrity. Logs contain IDs/emails only, never full payloads.
-- **Locale-consistent data.** Generator uses 7 Faker locales with a `LOCALE_COUNTRY` map so a German customer gets a German name, city, phone, and postal code. The producer uses the same mapping for consistency with the batch data.
-- **Causality.** `updated_at` ≥ `created_at`; orders after registration; reviews after both the customer's registration and the product's creation; deleted customers don't place orders or leave reviews.
-- **Validation + transformation.** Incoming Kafka messages are parsed through a pydantic `CustomerEvent` model - field presence, types, age range, email syntax, UUID format. Name/email normalization lives on the model as `field_validator`s. Invalid messages are logged with field-level detail and skipped.
+- **GDPR.** Soft delete via `customers.deleted_at`. Logs contain IDs/emails only.
+- **Locale consistency.** Generator and producer share a `LOCALE_COUNTRY` map so a German customer has a German name, city, phone, and postal code.
+- **Validation + transformation.** Handled by the `CustomerEvent` pydantic model: field presence, types, age range, email syntax, UUID format, name/email normalization. Invalid messages are logged and skipped.
+- **Causality.** Orders after registration; reviews after both registration and product creation; deleted customers don't place orders or leave reviews.
 
-## Known limitations
-
-- Invalid messages are logged and dropped; a production version would use a dead-letter topic or file.
-- Consumer opens a new SQLite connection per message - fine at this volume, not ideal under load.
-- No graceful shutdown handler; Ctrl+C raises `KeyboardInterrupt` out of the loop.
-- `LOCALE_COUNTRY` is duplicated between `generator.py` and `producer.py` - would extract to `src/constants.py`.
+## Possible improvements
+- The consumer opens a new SQLite connection for every message. Keeping a single connection open would be faster under more load.
+- The `LOCALE_COUNTRY` map is duplicated in `generator.py` and `producer.py`. Moving it to a shared `src/constants.py` would remove the duplication. 
