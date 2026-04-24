@@ -1,3 +1,9 @@
+"""Kafka consumer for the customers topic.
+
+Validates and transforms incoming events using the CustomerEvent pydantic
+model and then inserts them into the customers table.
+"""
+
 import sqlite3
 import json
 import os

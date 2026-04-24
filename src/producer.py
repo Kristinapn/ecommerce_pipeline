@@ -1,3 +1,5 @@
+"""Kafka producer, simulates real-time customer registrations."""
+
 import json
 import time
 import uuid

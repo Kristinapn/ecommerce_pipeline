@@ -1,3 +1,10 @@
+"""Batch data generation for the ecommerce DB.
+
+Generates fake data for all six tables, respecting temporal and
+referential constraints (orders after registration, reviews after product
+creation, etc.)
+"""
+
 from datetime import datetime, timedelta
 import sqlite3
 import os
